@@ -1,0 +1,12 @@
+Business Impact Assessment
+-------------------------
+Total loans evaluated: 6104
+Defaults correctly identified: 3010
+Non-defaults incorrectly flagged: 111
+Defaults missed: 42
+
+Financial Impact
+Default losses prevented: $150,500,000.00
+Cost of false alarms: $555,000.00
+Revenue from risk detection: $6,020,000.00
+Net business value: $155,965,000.00
