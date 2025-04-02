@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+    <style>
+        body { padding-top: 20px; padding-bottom: 20px; }
+        .documentation-container { max-width: 900px; margin: 0 auto; }
+        .markdown-body { padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="documentation-container">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/documentation">Documentation</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/business-impact">Business Impact</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body markdown-body">
+                    {{ content | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.markdown-body').forEach(function(el) {
+                el.innerHTML = marked.parse(el.textContent);
+            });
+        });
+    </script>
+</body>
+</html>
+        
