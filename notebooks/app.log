@@ -198,3 +198,14 @@ expected MARITAL_STATUS_WIDOWED, MARITAL_STATUS_ENGAGED, PRODUCT_ASSET FINANCE L
  * Running on http://192.168.100.23:5000
 2025-04-03 13:26:59,517 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
 2025-04-03 13:28:57,655 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 13:28:57] "GET / HTTP/1.1" 200 -
+2025-04-03 16:27:20,430 - __main__ - INFO - Model loaded successfully from loan_default_xgboost_model.pkl
+2025-04-03 16:27:20,439 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.23:5000
+2025-04-03 16:27:20,440 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-03 16:27:48,022 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 16:27:48] "GET / HTTP/1.1" 200 -
+2025-04-03 16:28:30,576 - __main__ - INFO - Received form data: {'AGE': '25', 'CREDIT_SCORE': '300', 'NO_DEFAULT_LOAN': '3', 'NET INCOME': '20000', 'PRINCIPAL_DISBURSED': '3500', 'EMI': '700', 'GENDER': 'MALE', 'MARITAL_STATUS': 'SINGLE', 'PRODUCT': 'MOBILE LOAN'}
+2025-04-03 16:28:30,602 - __main__ - INFO - Processed input shape: (1, 89)
+2025-04-03 16:28:30,669 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 16:28:30] "POST /predict HTTP/1.1" 200 -
+2025-04-03 16:28:34,831 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 16:28:34] "GET / HTTP/1.1" 200 -
