@@ -2,7 +2,7 @@ flask==2.3.3
 joblib==1.3.1
 gunicorn==21.2.0
 shap==0.44.0         # Stable version for SHAP
-xgboost==1.7.3       # Compatible with SHAP 0.44.0
+xgboost==1.5.0  # Try this older version that still had use_label_encoder
 pandas               # (Add if you use it, no strict version unless needed)
 numpy                # (Often required by SHAP/XGBoost)
 scikit-learn         # (If your model uses sklearn components)

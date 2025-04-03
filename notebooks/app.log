@@ -219,3 +219,19 @@ expected MARITAL_STATUS_WIDOWED, MARITAL_STATUS_ENGAGED, PRODUCT_ASSET FINANCE L
 2025-04-03 16:40:09,412 - __main__ - INFO - Received form data: {'AGE': '30', 'CREDIT_SCORE': '450', 'NO_DEFAULT_LOAN': '5', 'NET INCOME': '40000', 'PRINCIPAL_DISBURSED': '18000', 'EMI': '3000', 'GENDER': 'MALE', 'MARITAL_STATUS': 'ENGAGED', 'PRODUCT': 'MOBILE LOAN'}
 2025-04-03 16:40:09,440 - __main__ - INFO - Processed input shape: (1, 89)
 2025-04-03 16:40:09,516 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 16:40:09] "POST /predict HTTP/1.1" 200 -
+2025-04-03 17:07:18,194 - __main__ - INFO - Model loaded successfully from loan_default_xgboost_model.pkl
+2025-04-03 17:07:18,203 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.23:5000
+2025-04-03 17:07:18,203 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-03 17:07:24,714 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:07:24] "GET / HTTP/1.1" 200 -
+2025-04-03 17:08:13,407 - __main__ - INFO - Received form data: {'AGE': '40', 'CREDIT_SCORE': '500', 'NO_DEFAULT_LOAN': '6', 'NET INCOME': '60000', 'PRINCIPAL_DISBURSED': '300000', 'EMI': '7000', 'GENDER': 'MALE', 'MARITAL_STATUS': 'MARRIED', 'PRODUCT': 'MOBILE LOAN'}
+2025-04-03 17:08:13,565 - __main__ - INFO - Processed input shape: (1, 89)
+2025-04-03 17:08:13,721 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:08:13] "POST /predict HTTP/1.1" 200 -
+2025-04-03 17:09:02,782 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:09:02] "GET / HTTP/1.1" 200 -
+2025-04-03 17:16:33,572 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:16:33] "GET / HTTP/1.1" 200 -
+2025-04-03 17:16:34,421 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:16:34] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-04-03 17:16:57,600 - __main__ - INFO - Received form data: {'AGE': '30', 'CREDIT_SCORE': '300', 'NO_DEFAULT_LOAN': '4', 'NET INCOME': '37000', 'PRINCIPAL_DISBURSED': '24000', 'EMI': '2000', 'GENDER': 'MALE', 'MARITAL_STATUS': 'SINGLE', 'PRODUCT': 'PERSONAL UNSECURED SCHEME LOAN'}
+2025-04-03 17:16:57,720 - __main__ - INFO - Processed input shape: (1, 89)
+2025-04-03 17:16:57,916 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:16:57] "POST /predict HTTP/1.1" 200 -
