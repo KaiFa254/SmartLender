@@ -201,10 +201,29 @@ def make_prediction(input_df):
         else:
             risk_level = "High Risk"
         
+        # Extract some key features for display
+        credit_score = int(input_df['CREDIT_SCORE'].iloc[0]) if 'CREDIT_SCORE' in input_df else 'N/A'
+        
+        # Calculate income to EMI ratio
+        income = float(input_df['NET INCOME'].iloc[0]) if 'NET INCOME' in input_df else 0
+        emi = float(input_df['EMI'].iloc[0]) if 'EMI' in input_df else 1  # Avoid division by zero
+        income_to_emi_ratio = round(income / emi, 2) if emi > 0 else 'N/A'
+        
+        # Get loan amount
+        loan_amount = int(input_df['PRINCIPAL_DISBURSED'].iloc[0]) if 'PRINCIPAL_DISBURSED' in input_df else 'N/A'
+        
+        # Get current date for the report
+        from datetime import datetime
+        analysis_date = datetime.now().strftime("%B %d, %Y")
+        
         return {
             'default_probability': float(prob),
             'default_prediction': int(prediction),
-            'risk_level': risk_level
+            'risk_level': risk_level,
+            'credit_score': credit_score,
+            'income_to_emi_ratio': income_to_emi_ratio,
+            'loan_amount': loan_amount,
+            'analysis_date': analysis_date
         }
     
     except Exception as e:
@@ -553,5 +572,8 @@ if __name__ == '__main__':
                 f.write(content)
             logger.info(f"Created template: {filename}")
     
+    # Get port from environment variable or use 5000 as default
+    port = int(os.environ.get('PORT', 5000))
+    
     # Run the Flask app
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
