@@ -197,3 +197,4 @@ expected MARITAL_STATUS_WIDOWED, MARITAL_STATUS_ENGAGED, PRODUCT_ASSET FINANCE L
  * Running on http://127.0.0.1:5000
  * Running on http://192.168.100.23:5000
 2025-04-03 13:26:59,517 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-03 13:28:57,655 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 13:28:57] "GET / HTTP/1.1" 200 -
