@@ -235,3 +235,18 @@ expected MARITAL_STATUS_WIDOWED, MARITAL_STATUS_ENGAGED, PRODUCT_ASSET FINANCE L
 2025-04-03 17:16:57,600 - __main__ - INFO - Received form data: {'AGE': '30', 'CREDIT_SCORE': '300', 'NO_DEFAULT_LOAN': '4', 'NET INCOME': '37000', 'PRINCIPAL_DISBURSED': '24000', 'EMI': '2000', 'GENDER': 'MALE', 'MARITAL_STATUS': 'SINGLE', 'PRODUCT': 'PERSONAL UNSECURED SCHEME LOAN'}
 2025-04-03 17:16:57,720 - __main__ - INFO - Processed input shape: (1, 89)
 2025-04-03 17:16:57,916 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:16:57] "POST /predict HTTP/1.1" 200 -
+2025-04-03 17:50:47,433 - __main__ - INFO - Model loaded successfully from loan_default_xgboost_model.pkl
+2025-04-03 17:50:47,451 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.23:5000
+2025-04-03 17:50:47,452 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-03 17:50:59,863 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:50:59] "GET / HTTP/1.1" 200 -
+2025-04-03 17:51:26,130 - __main__ - INFO - Received form data: {'AGE': '30', 'CREDIT_SCORE': '500', 'NO_DEFAULT_LOAN': '8', 'NET INCOME': '45000', 'PRINCIPAL_DISBURSED': '200000', 'EMI': '9000', 'GENDER': 'MALE', 'MARITAL_STATUS': 'SINGLE', 'PRODUCT': 'PERSONAL UNSECURED SCHEME LOAN'}
+2025-04-03 17:51:26,289 - __main__ - INFO - Processed input shape: (1, 89)
+2025-04-03 17:51:26,458 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:51:26] "POST /predict HTTP/1.1" 200 -
+2025-04-03 17:51:33,257 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:51:33] "GET / HTTP/1.1" 200 -
+2025-04-03 17:51:52,794 - __main__ - INFO - Received form data: {'AGE': '25', 'CREDIT_SCORE': '300', 'NO_DEFAULT_LOAN': '3', 'NET INCOME': '20000', 'PRINCIPAL_DISBURSED': '3000', 'EMI': '500', 'GENDER': 'MALE', 'MARITAL_STATUS': 'SINGLE', 'PRODUCT': 'PERSONAL UNSECURED SCHEME LOAN'}
+2025-04-03 17:51:52,972 - __main__ - INFO - Processed input shape: (1, 89)
+2025-04-03 17:51:53,143 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:51:53] "POST /predict HTTP/1.1" 200 -
+2025-04-03 17:51:57,121 - werkzeug - INFO - 127.0.0.1 - - [03/Apr/2025 17:51:57] "GET / HTTP/1.1" 200 -
