@@ -1,268 +1,155 @@
-import os
-import numpy as np
-import pandas as pd
+from flask import Flask, request, render_template, jsonify
 import joblib
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+import pandas as pd
+import shap
+import numpy as np
+import os
 import logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Load the model
-MODEL_PATH = 'loan_default_xgboost_model.pkl'
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# Load the pre-trained pipeline
+pipeline = joblib.load('loan_default_pipeline.pkl')
+
+# For SHAP: Load a sample of training data or create background data
 try:
-    model = joblib.load(MODEL_PATH)
-    logger.info(f"Model loaded successfully from {MODEL_PATH}")
-except Exception as e:
-    logger.error(f"Error loading model: {str(e)}")
-    model = None
-
-# Define the feature names expected by the model
-expected_features = ['AGE', 'CREDIT_SCORE', 'NO_DEFAULT_LOAN', 'NET INCOME', 
-                     'PRINCIPAL_DISBURSED', 'EMI', 'GENDER', 'MARITAL_STATUS', 'PRODUCT']
+    X_train_sample = pd.read_csv('X_train_sample.csv')
+    X_train_transformed = pipeline.named_steps['preprocessor'].transform(X_train_sample)
+    explainer = shap.TreeExplainer(pipeline.named_steps['model'], X_train_transformed)
+except:
+    explainer = None
 
 @app.route('/')
 def home():
-    """Render the home page"""
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """API endpoint for making predictions"""
     try:
-        # Check if the request contains JSON data
-        if request.is_json:
-            data = request.get_json()
-            logger.info(f"Received JSON data: {data}")
-        else:
-            # Process form data
-            data = {key: request.form.get(key) for key in request.form}
-            logger.info(f"Received form data: {data}")
-        
-        # Convert data to DataFrame
-        input_df = prepare_input_data(data)
-        
-        # Make prediction
-        prediction_result = make_prediction(input_df)
-        
-        # Return result based on request type
-        if request.is_json:
-            return jsonify(prediction_result)
-        else:
-            return render_template('result.html', prediction=prediction_result)
-    
-    except Exception as e:
-        logger.error(f"Prediction error: {str(e)}")
-        error_message = str(e)
-        if request.is_json:
-            return jsonify({'error': error_message}), 400
-        else:
-            return render_template('error.html', error=error_message), 400
-
-@app.route('/batch-predict', methods=['POST'])
-def batch_predict():
-    """API endpoint for batch predictions"""
-    try:
-        # Check if file is uploaded
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        # Read the uploaded CSV file
-        df = pd.read_csv(file)
-        logger.info(f"Batch prediction request with {len(df)} records")
-        
-        # Process each row
-        results = []
-        for _, row in df.iterrows():
-            input_df = prepare_input_data(row.to_dict())
-            prediction = make_prediction(input_df)
-            results.append(prediction)
-        
-        # Return batch results
-        return jsonify({'predictions': results})
-    
-    except Exception as e:
-        logger.error(f"Batch prediction error: {str(e)}")
-        return jsonify({'error': str(e)}), 400
-
-def prepare_input_data(data):
-    """Prepare input data for prediction"""
-    # Create a DataFrame with the expected structure
-    input_data = {}
-    
-    # Process numerical features
-    numerical_features = ['AGE', 'CREDIT_SCORE', 'NO_DEFAULT_LOAN', 'NET INCOME', 
-                          'PRINCIPAL_DISBURSED', 'EMI']
-    for feature in numerical_features:
-        if feature in data:
-            try:
-                input_data[feature] = float(data[feature])
-            except ValueError:
-                raise ValueError(f"Invalid value for {feature}: {data[feature]}")
-        else:
-            raise ValueError(f"Missing required feature: {feature}")
-    
-    # Process categorical features
-    categorical_features = ['GENDER', 'MARITAL_STATUS', 'PRODUCT']
-    for feature in categorical_features:
-        if feature in data:
-            input_data[feature] = str(data[feature])
-        else:
-            raise ValueError(f"Missing required feature: {feature}")
-    
-    # Create DataFrame
-    df = pd.DataFrame([input_data])
-    
-    # Create dummy variables for categorical features - this matches model training
-    # Process each categorical feature separately to ensure proper column naming
-    df_processed = df[numerical_features].copy()
-    
-    # Handle GENDER (create GENDER_MALE)
-    if df['GENDER'].iloc[0].upper() == 'MALE':
-        df_processed['GENDER_MALE'] = 1
-    else:
-        df_processed['GENDER_MALE'] = 0
-    
-    # Handle MARITAL_STATUS (create MARITAL_STATUS_X for each category)
-    marital_categories = ['ENGAGED', 'MARRIED', 'OTHER', 'PARTNER', 'SINGLE', 'WIDOWED']
-    marital_status = df['MARITAL_STATUS'].iloc[0].upper()
-    for category in marital_categories:
-        col_name = f'MARITAL_STATUS_{category}'
-        df_processed[col_name] = 1 if marital_status == category else 0
-    
-    # Handle PRODUCT (create PRODUCT_X for each product type)
-    product_types = [
-        'AFFORDABLE HOUSING', 'AGRIBUSINESS SCHEME LOAN PRODUCT', 'ASSET FINANCE LOAN', 
-        'AUTO EQUITY LOAN', 'BUY AND BUILD LOANS', 'CASH COVERED LOAN', 
-        'CASH COVERED LOANS', 'CASH COVERED PERSONAL LOANS', 'CBA STAFF CAR LOAN', 
-        'CBA STAFF EQUITY RELEASE', 'CBA STAFF MORTGAGE LOAN', 'CBA STAFF SHAMBA LOAN', 
-        'COMMERCIAL VEHICLES', 'COMPANY IPF', 'CONSTRUCTION LOAN - CONSUMER', 
-        'CONSTRUCTION LOANS', 'CONSTRUTION FINANCE', 'CONSUMER SECURED LOAN', 
-        'CONSUMER UNSECURED LOAN', 'CONTRACT FINANCING', 'CONTRACTOR EQUIPMENT', 
-        'CORPORATE TERM LOAN', 'DIGITAL PERSONAL LOAN', 'DISTRIBUTOR FINANCE', 
-        'DMB DISTRIBUTOR FINANCE', 'DMB LOAN - ASSET FINANCE', 'DMB LOAN - ASSET FINANCE HP', 
-        'DMB LOAN - COMMERCIAL', 'DMB LOAN - INSUR. PREM. FINANCE', 'DMB LOAN - MORTGAGE', 
-        'DMB LOAN - PERSONAL', 'EDUCATION LOANS', 'EMERGENCY LOAN', 'EQUITY FINANCE', 
-        'EQUITY RELEASE', 'EX NCBA MOTOR VEHICLE LOAN', 'EX NCBA STAFF MORTGAGE', 
-        'EX NCBA STAFF PERSONAL LOAN', 'EX NCBA STAFF SHAMBA LOAN', 'INDIVIDUAL IPF', 
-        'LOAN - ASSET FINANCE', 'LOAN - COMMERCIAL', 'LOAN - INSURANCE PREMIUM FINANCE', 
-        'LOAN - MORTGAGE', 'LOAN - PERSONAL', 'LOAN - STOCK FINANCE', 'MARKET HOUSING - AHP', 
-        'MOBILE LOAN', 'MORTGAGE BUY OUT LOANS', 'MORTGAGE LOAN', 'MOTOR VEHICLE LOAN', 
-        'NCBA EASYBUILD (DESIGN AND BUILD)', 'PB BUY AND BUILD', 'PERSONAL SECURED LOANS', 
-        'PERSONAL UNSECURED NON SCHEME LOAN', 'PERSONAL UNSECURED SCHEME LOAN', 
-        'PLOT PURCHASE', 'PLOT PURCHASE LOAN', 'PLOT PURCHASE LOANS', 
-        'PREMIUM FINANCE - CONSUMER', 'PROPERTY FINANCE', 'PROPERTY PURCHASE LOANS', 
-        'PSV BUSES', 'PSV MATATU', 'PSV VEHICLES- TAXIS CAR HIRE', 'SALARY ADVANCE LOAN', 
-        'SALOON CARS', 'SCHOOL BUSES', 'SECURED BUSINESS LOANS', 'SPECIALIZED EQUIPMENT', 
-        'STAFF SECURED LOAN', 'STAFF UNSECURED LOAN', 'STOCK LOANS', 
-        'TRACTORS AND RELATED IMPLEMENTS', 'TRAILERS', 'UNSECURED BUSINESS LOAN'
-    ]
-    
-    product = df['PRODUCT'].iloc[0].upper()
-    for prod_type in product_types:
-        col_name = f'PRODUCT_{prod_type}'
-        df_processed[col_name] = 1 if product == prod_type else 0
-    
-    logger.info(f"Processed input shape: {df_processed.shape}")
-    return df_processed
-
-def make_prediction(input_df):
-    """Make prediction with the loaded model"""
-    if model is None:
-        raise ValueError("Model not loaded correctly")
-    
-    try:
-        # Get prediction probability
-        prob = model.predict_proba(input_df)[0, 1]
-        # Get binary prediction (1 = DEFAULT, 0 = NO DEFAULT)
-        prediction = model.predict(input_df)[0]
-        
-        # Calculate risk level
-        if prob < 0.3:
-            risk_level = "Low Risk"
-        elif prob < 0.7:
-            risk_level = "Medium Risk"
-        else:
-            risk_level = "High Risk"
-        
-        # Extract some key features for display
-        credit_score = int(input_df['CREDIT_SCORE'].iloc[0]) if 'CREDIT_SCORE' in input_df else 'N/A'
-        
-        # Calculate income to EMI ratio
-        income = float(input_df['NET INCOME'].iloc[0]) if 'NET INCOME' in input_df else 0
-        emi = float(input_df['EMI'].iloc[0]) if 'EMI' in input_df else 1  # Avoid division by zero
-        income_to_emi_ratio = round(income / emi, 2) if emi > 0 else 'N/A'
-        
-        # Get loan amount
-        loan_amount = int(input_df['PRINCIPAL_DISBURSED'].iloc[0]) if 'PRINCIPAL_DISBURSED' in input_df else 'N/A'
-        
-        # Get current date for the report
-        from datetime import datetime
-        analysis_date = datetime.now().strftime("%B %d, %Y")
-        
-        return {
-            'default_probability': float(prob),
-            'default_prediction': int(prediction),
-            'risk_level': risk_level,
-            'credit_score': credit_score,
-            'income_to_emi_ratio': income_to_emi_ratio,
-            'loan_amount': loan_amount,
-            'analysis_date': analysis_date
+        # Use UPPERCASE column names to match training data and HTML form
+        data = {
+            'AGE': int(request.form.get('AGE')),
+            'CREDIT_SCORE': int(request.form.get('CREDIT_SCORE')),
+            'NO_DEFAULT_LOAN': int(request.form.get('NO_DEFAULT_LOAN')),
+            'NET_INCOME': float(request.form.get('NET_INCOME')),
+            'PRINCIPAL_DISBURSED': float(request.form.get('PRINCIPAL_DISBURSED')),
+            'EMI': float(request.form.get('EMI')),
+            'GENDER': request.form.get('GENDER'),
+            'MARITAL_STATUS': request.form.get('MARITAL_STATUS'),
+            'PRODUCT': request.form.get('PRODUCT')
         }
-    
-    except Exception as e:
-        logger.error(f"Prediction calculation error: {str(e)}")
-        raise ValueError(f"Error making prediction: {str(e)}")
 
-@app.route('/health')
-def health():
-    """Health check endpoint"""
-    if model is None:
-        return jsonify({'status': 'error', 'message': 'Model not loaded'}), 500
-    return jsonify({'status': 'healthy', 'model': MODEL_PATH})
+        input_df = pd.DataFrame([data])
+
+        # Predict
+        default_prob = pipeline.predict_proba(input_df)[:, 1][0]
+        default_prediction = pipeline.predict(input_df)[0]
+
+        # Compute SHAP values (if explainer is available)
+        contributions = {}
+        if explainer is not None:
+            input_transformed = pipeline.named_steps['preprocessor'].transform(input_df)
+            shap_values = explainer.shap_values(input_transformed)
+            if isinstance(shap_values, list):
+                shap_values = shap_values[0]
+            feature_importance = np.abs(shap_values[0])
+            feature_percent = 100 * feature_importance / np.sum(feature_importance)
+            
+            feature_names = input_df.columns
+            contributions = {feature_names[i]: f"{feature_percent[i]:.2f}%" 
+                           for i in range(len(feature_names))}
+        
+        result = {
+            'prediction': int(default_prediction),
+            'probability': float(default_prob),
+            'status': 'Default Risk' if default_prediction == 1 else 'No Default Risk',
+            'risk_percentage': f"{default_prob * 100:.2f}%",
+            'feature_contributions': contributions
+        }
+
+        return render_template('result.html', result=result, data=data)
+
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return jsonify({'error': str(e)})
+
 
 @app.route('/documentation')
 def documentation():
-    """Display model documentation"""
     try:
-        with open('loan_default_model_documentation.md', 'r') as f:
-            doc_content = f.read()
-        return render_template('documentation.html', content=doc_content)
+        doc_path = 'loan_default_model_documentation.md'
+        if os.path.exists(doc_path):
+            with open(doc_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = "# Documentation\n\nDocumentation file not found."
+        
+        return render_template('documentation.html', content=content)
     except Exception as e:
-        logger.error(f"Error reading documentation: {str(e)}")
-        return render_template('error.html', error="Documentation not available"), 404
+        logger.error(f"Error loading documentation: {e}")
+        return render_template('error.html', error=str(e))
 
 @app.route('/business-impact')
 def business_impact():
-    """Display business impact assessment"""
     try:
-        with open('business_impact_assessment.txt', 'r') as f:
-            impact_content = f.read()
-        return render_template('business_impact.html', content=impact_content)
+        impact_path = 'business_impact_assessment.txt'
+        if os.path.exists(impact_path):
+            with open(impact_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        else:
+            content = "Business impact assessment file not found."
+        
+        return render_template('business_impact.html', content=content)
     except Exception as e:
-        logger.error(f"Error reading business impact: {str(e)}")
-        return render_template('error.html', error="Business impact assessment not available"), 404
+        logger.error(f"Error loading business impact: {e}")
+        return render_template('error.html', error=str(e))
+
+@app.route('/batch-predict', methods=['POST'])
+def batch_predict():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'})
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'})
+        
+        # Read the CSV file
+        df = pd.read_csv(file)
+        
+        # Make predictions
+        predictions = pipeline.predict(df)
+        probabilities = pipeline.predict_proba(df)[:, 1]
+        
+        # Add predictions to dataframe
+        df['Prediction'] = predictions
+        df['Default_Probability'] = probabilities
+        df['Risk_Level'] = df['Default_Probability'].apply(
+            lambda x: 'Low Risk' if x < 0.3 else ('Medium Risk' if x < 0.7 else 'High Risk')
+        )
+        
+        # Convert to HTML table
+        table_html = df.to_html(classes='table table-striped table-hover', index=False)
+        
+        return render_template('batch_result.html', table=table_html)
+    
+    except Exception as e:
+        logger.error(f"Error in batch prediction: {e}")
+        return render_template('error.html', error=str(e))
+
 
 if __name__ == '__main__':
-    # Create templates directory if it doesn't exist
-    os.makedirs('templates', exist_ok=True)
-    
+    # Get port from environment variable or use 5000 as default
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
+
     # Create basic HTML templates if they don't exist
     templates = {
         'index.html': '''
@@ -402,24 +289,24 @@ if __name__ == '__main__':
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Prediction Summary</h5>
-                    
+                   
                     <div class="mb-4">
                         <div class="progress" style="height: 30px;">
-                            <div class="progress-bar 
+                            <div class="progress-bar
                                 {% if prediction.default_probability < 0.3 %}bg-success
                                 {% elif prediction.default_probability < 0.7 %}bg-warning
-                                {% else %}bg-danger{% endif %}" 
-                                role="progressbar" 
+                                {% else %}bg-danger{% endif %}"
+                                role="progressbar"
                                 style="width: {{ prediction.default_probability * 100 }}%"
-                                aria-valuenow="{{ prediction.default_probability * 100 }}" 
-                                aria-valuemin="0" 
+                                aria-valuenow="{{ prediction.default_probability * 100 }}"
+                                aria-valuemin="0"
                                 aria-valuemax="100">
                                 {{ "%.1f"|format(prediction.default_probability * 100) }}%
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="alert 
+                   
+                    <div class="alert
                         {% if prediction.default_probability < 0.3 %}alert-success
                         {% elif prediction.default_probability < 0.7 %}alert-warning
                         {% else %}alert-danger{% endif %}">
@@ -434,7 +321,7 @@ if __name__ == '__main__':
                         <hr>
                         <p class="mb-0">Default Probability: {{ "%.2f"|format(prediction.default_probability * 100) }}%</p>
                     </div>
-                    
+                   
                     <div class="text-center mt-4">
                         <a href="/" class="btn btn-primary">Make Another Prediction</a>
                     </div>
@@ -564,16 +451,16 @@ if __name__ == '__main__':
 </html>
         '''
     }
-    
+   
     for filename, content in templates.items():
         filepath = os.path.join('templates', filename)
         if not os.path.exists(filepath):
             with open(filepath, 'w') as f:
                 f.write(content)
             logger.info(f"Created template: {filename}")
-    
+   
     # Get port from environment variable or use 5000 as default
     port = int(os.environ.get('PORT', 5000))
-    
+   
     # Run the Flask app
     app.run(host='0.0.0.0', port=port, debug=False)
